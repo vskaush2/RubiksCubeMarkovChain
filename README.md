@@ -4,7 +4,7 @@ This project investigates a group of permutations that represent the movements o
 Please follow the instructions below. 
 - Download the project folder from Git.
 - Open Command Prompt/Terminal and change directory to the project folder.
-- Create a new virtual environment with the latest version of Python.
+- Create and activate a new virtual environment with the latest version of Python.
 - Run "pip3 install -r requirements.txt" to install project requirements.
 - Run "jupyter notebook" and click on the "RubiksCubeGroupDemo.ipynb" notebook.
 - Run all cells.
