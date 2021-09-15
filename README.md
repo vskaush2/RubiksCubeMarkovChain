@@ -1,4 +1,4 @@
-# Rubiks Cube Group
+# Rubiks Cube Scrambling Markov Chain
 We construct and investigate a Markov Chain associated with scrrambling the Rubiks Cube. We determine how many scrambles are needed so that the corresponding Markov Chain distribution is approximately discrete uniform. 
 ## Downloading Requirements
 * Download PyCharm (free edition) from https://www.jetbrains.com/pycharm/.
