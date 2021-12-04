@@ -6,7 +6,7 @@ class MarkovChainCalculations:
     def __init__(self, n):
         self.n=n
         self.transition_matrix=MarkovGraph(self.n).transition_matrix
-        self.current_total_variation_distances_df = self.compute_current_total_variation_distances_df()
+
 
     def compute_chain_distribution(self,t):
         directory = '{}D/Chain_Distributions'.format(self.n)
