@@ -3,14 +3,19 @@ We construct and investigate a Markov Chain associated with scrambling the Rubik
 
 ## Downloading Requirements
 * Download PyCharm (free edition) from https://www.jetbrains.com/pycharm/.
-* Download the latest version of Python 3 from https://www.python.org/downloads/.
+* Download Python 3.10 from https://www.python.org/downloads/.
 
 ## Importing Project
 * Open PyCharm and select `Get from VCS`.
 * Enter this project's .git link.
 * Specify the download location to be the `PyCharmProjects` folder.
 
-## Installing Project Dependencies
+## Installying Project Dependencies Automatically
+- You may be prompted by PyCharm to install a Virtual Environment based on the `requirements.txt` file.
+- Follow the onscreen instructions to do so.
+- Make sure you specify your installed Python 3 for creating the Virtual Environment.
+
+## Installing Project Dependencies Manually
 * Open PyCharm Settings and locate the `Project: RubiksCubeMarkovChain` pane.
 * Click on `Project Interpreter`.
 * Add a new `VirtualEnv` environment with your system Python.
