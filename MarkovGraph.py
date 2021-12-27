@@ -1,161 +1,145 @@
-from CubePermutation import *
 import os
 import json
 import scipy as sc
 from scipy import sparse
+from sympy.combinatorics import Permutation
+from CubeConfiguration import *
+
+def get_permutation(move_seq, n):
+    new_configuration_dict = CubeConfiguration(n=n).move(move_seq)
+    enumerated_stickers_list = [entry for face_matrix in new_configuration_dict.values() for entry in face_matrix.reshape(-1)]
+    permutation = Permutation(enumerated_stickers_list, size=6 * n ** 2)
+    return permutation
+
+def get_rotation_permutations(n):
+    F, L, U, B, R, D = [get_permutation(basic_move,n) for basic_move in basic_moves]
+    if n == 2:
+        return F, L, U, F*F*F, L*L*L, U*U*U
+    elif n == 3:
+        return F, L, U, B, R, D, F*F*F, L*L*L, U*U*U, B*B*B, R*R*R, D*D*D
 
 class MarkovGraph:
-
-    def __init__(self,n):
-        self.n=n
-        self.current_permutations_dict = self.load_current_permutations_dict() # Dictionary of Current Permutations in Graph
-        self.transition_matrix_nonzero_entry_row_column_indices_dict = self.load_transition_matrix_nonzero_entry_row_column_indices_dict()
-        # Dictionary of Nonzero Row Column Entry Indices of Markov Transition Matrix
-        self.transition_matrix=self.load_transition_matrix_COO_format() # Transition Matrix in COO Format
-
-    def load_current_permutations_dict(self):
-        current_permutations_dict = {0: list(range(6*self.n**2))}
-        directory="{}D".format(self.n)
+    def __init__(self, n, load_only_transition_matrix = False):
+        self.n = n # Dimension of Cube
+        self.directory = "{}D".format(self.n)
         try:
-            os.makedirs(directory)
+            os.makedirs(self.directory)
         except:
             pass
-        file_path="{}/All_Permutations.json".format(directory)
+        if load_only_transition_matrix:
+            self.transition_matrix = self.load_transition_matrix_COO_format()  # Transition Matrix in COO Format
+        else:
+            self.rotation_permutations = get_rotation_permutations(self.n)
+            self.current_permutations_dict = self.load_current_permutations_dict()  # Dictionary of Current Permutations in Graph
+            self.transition_matrix_nonzero_entry_row_column_indices_dict = self.load_transition_matrix_nonzero_entry_row_column_indices_dict()  # Dictionary of Nonzero Row Column Entry Indices of Markov Transition Matrix
+            self.transition_matrix = self.load_transition_matrix_COO_format()
+
+    def load_current_permutations_dict(self):
+        current_permutations_dict = {0 : get_permutation('', self.n)}
+        file_path = "{}/All_Permutations.json".format(self.directory)
 
         if os.path.exists(file_path):
             with open(file_path, 'r') as f:
-                print("LOADING EXISTING ATTAINABLE PERMUTATIONS DICTIONARY ...")
                 current_permutations_dict = json.load(f)
-                print("DONE !!!")
-                print("CONVERTING KEYS TO INTEGERS ...")
                 keys = [int(x) for x in current_permutations_dict.keys()]
-                current_permutations_dict = dict(zip(keys, current_permutations_dict.values()))
-                print("DONE !!!")
+                print("CONVERTING LISTS TO PERMUTATIONS ... ")
+                current_permutations = [Permutation(val, size=6 * self.n ** 2) for val in current_permutations_dict.values()]
+                current_permutations_dict = dict(zip(keys, current_permutations))
         return current_permutations_dict
 
     def update_current_permutations_dict(self):
-        directory = "{}D".format(self.n)
-        file_path = "{}/All_Permutations.json".format(directory)
-        clockwise_basic_permutations=CubePermutation(self.n).get_clockwise_basic_permutations()
-        print("CONVERTING PERMUTATION LISTS TO CYCLIC NOTATION  ...")
-        current_permutations = {Permutation(val, size=6 * self.n ** 2) for val in self.current_permutations_dict.values()}
-        print("DONE !!!")
-        print("OBTAINING ALL ATTAINABLE PERMUTATIONS ...")
-        attainable_permutations = {clockwise_basic_permutation * current_permutation
-                                   for clockwise_basic_permutation in clockwise_basic_permutations for current_permutation in current_permutations}
-        # Attainable permutations are obtained by composing the 6 basic clockwise face rotations with each current list permutation
-        print("DONE !!!")
-        print("DELETING REDUNDANT PERMUTATIONS ...")
-        new_permutations = attainable_permutations - current_permutations # Deleting Redundant Permutations
-        print("DONE !!!")
+        file_path = "{}/All_Permutations.json".format(self.directory)
+        current_permutations = set(self.current_permutations_dict.values())
+        print("FINDING ALL ATTAINABLE PERMUTATIONS ... ")
+        attainable_permutations = {rotation_permutation * current_permutation for rotation_permutation in self.rotation_permutations
+                                   for current_permutation in current_permutations}
+        # Attainable permutations are obtained by composing each rotation permutation with each current list permutation
+        print("DELETING REDUNDANT PERMUTATIONS ... ")
+        new_permutations = attainable_permutations - current_permutations  # Deleting Redundant Permutations
 
         if len(new_permutations) != 0:
-            keys = range(len(current_permutations), len(current_permutations) + len(new_permutations))
-            vals = [list(new_permutation) for new_permutation in new_permutations]
-            print("UPDATING ATTAINABLE PERMUTATIONS DICTIONARY ...")
-            self.current_permutations_dict.update(dict(zip(keys, vals)))
-            print("DONE !!!")
-
-            with open(file_path ,'w') as f:
-                print("SAVING ATTAINABLE PERMUTATIONS DICTIONARY ...")
-                json.dump(self.current_permutations_dict,f)
-                print("DONE !!!")
-        else:
-            print("NOTHING NEW TO SAVE !!!")
-
+            new_keys = list(range(len(current_permutations), len(current_permutations) + len(new_permutations)))
+            new_vals = list(new_permutations)
+            new_dict = dict(zip(new_keys, new_vals))
+            self.current_permutations_dict.update(new_dict)
+            with open(file_path, 'w') as f:
+                keys=self.current_permutations_dict.keys()
+                print("SAVING ALL PERMUTATIONS ... ")
+                vals=[list(current_permutation) for current_permutation in self.current_permutations_dict.values()]
+                json.dump(dict(zip(keys, vals)), f)
         return self.current_permutations_dict
 
     def load_transition_matrix_nonzero_entry_row_column_indices_dict(self):
-        directory = '{}D'.format(self.n)
-        file_path = "{}/Transition_Matrix_Nonzero_Entry_Row_Column_Indices.json".format(directory)
+        file_path = "{}/Transition_Matrix_Nonzero_Entry_Row_Column_Indices.json".format(self.directory)
         transition_matrix_nonzero_entry_row_column_indices_dict = {0 : []}
         if os.path.exists(file_path):
             with open(file_path, 'r') as f:
-                print("LOADING TRANSITION MATRIX NONZERO ENTRY ROW COLUMN INDICES DICTIONARY ...")
+                print("LOADING TRANSITION MATRIX NONZERO ROW COLUMN INDICES DICTIONARY ... ")
                 transition_matrix_nonzero_entry_row_column_indices_dict = json.load(f)
-                print("DONE !!!")
-                print("CONVERTING KEYS TO INTEGERS ...")
                 keys = [int(x) for x in transition_matrix_nonzero_entry_row_column_indices_dict.keys()]
-                transition_matrix_nonzero_entry_row_column_indices_dict = dict(zip(keys, transition_matrix_nonzero_entry_row_column_indices_dict.values()))
-                print("DONE !!!")
+                vals = transition_matrix_nonzero_entry_row_column_indices_dict.values()
+                transition_matrix_nonzero_entry_row_column_indices_dict = dict(zip(keys, vals))
         return transition_matrix_nonzero_entry_row_column_indices_dict
 
+    def update_transition_matrix_nonzero_entry_row_column_indices_dict(self, stopping_index=None):
+        file_path = "{}/Transition_Matrix_Nonzero_Entry_Row_Column_Indices.json".format(self.directory)
 
-    def update_transition_matrix_nonzero_entry_row_column_indices_dict(self,stopping_index=None):
         if stopping_index == None:
-            stopping_index=len(self.current_permutations_dict)
+            stopping_index = len(self.current_permutations_dict)
 
-        directory = '{}D'.format(self.n)
-        file_path = "{}/Transition_Matrix_Nonzero_Entry_Row_Column_Indices.json".format(directory)
         keys = self.current_permutations_dict.keys()
-        clockwise_basic_permutations=CubePermutation(self.n).get_clockwise_basic_permutations()
+        current_permutations = self.current_permutations_dict.values()
 
         try:
             incomplete_row_index = next(row_index for row_index in self.current_permutations_dict.keys()
                                         if row_index not in self.transition_matrix_nonzero_entry_row_column_indices_dict.keys() or
-                                        len(self.transition_matrix_nonzero_entry_row_column_indices_dict[row_index]) != 6)
+                                        len(self.transition_matrix_nonzero_entry_row_column_indices_dict[row_index]) != len(self.rotation_permutations))
 
-            print("CONVERTING PERMUTATION LISTS TO CYCLIC NOTATION  ...")
-            current_permutations = [Permutation(val, size=6 * self.n ** 2) for val in self.current_permutations_dict.values()]
-            print("DONE !!!")
 
             permutation_index_dict = dict(zip(current_permutations, keys))
 
-            print("UPDATING TRANSITION MATRIX NONZERO ENTRY ROW COLUMN INDICES DICTIONARY ...")
             for row_index in range(incomplete_row_index, stopping_index):
-                if row_index not in self.transition_matrix_nonzero_entry_row_column_indices_dict.keys() or len(self.transition_matrix_nonzero_entry_row_column_indices_dict[row_index]) != 6:
-                    current_permutation = Permutation(self.current_permutations_dict[row_index], size=6 * self.n ** 2)
-                    attainable_permutations = [clockwise_basic_permutation * current_permutation for clockwise_basic_permutation in clockwise_basic_permutations
-                                               if clockwise_basic_permutation * current_permutation in  permutation_index_dict.keys()]
-                    nonzero_row_column_indices = sorted([permutation_index_dict[attainable_permutation] for attainable_permutation in attainable_permutations])
-                    self.transition_matrix_nonzero_entry_row_column_indices_dict.update({row_index: nonzero_row_column_indices})
-            print("DONE !!!")
+                if row_index not in self.transition_matrix_nonzero_entry_row_column_indices_dict.keys() or \
+                        len(self.transition_matrix_nonzero_entry_row_column_indices_dict[row_index]) != len(self.rotation_permutations):
+
+                    current_permutation = self.current_permutations_dict[row_index]
+                    attainable_permutations = [rotation_permutation * current_permutation for
+                                               rotation_permutation in self.rotation_permutations
+                                               if rotation_permutation * current_permutation in permutation_index_dict.keys()]
+
+                    nonzero_row_column_indices = sorted([permutation_index_dict[attainable_permutation] for attainable_permutation in
+                                                         attainable_permutations])
+
+                    self.transition_matrix_nonzero_entry_row_column_indices_dict.update({row_index : nonzero_row_column_indices})
 
             with open(file_path, 'w') as f:
-                print("SAVING TRANSITION MATRIX NONZERO ENTRY ROW COLUMN INDICES DICTIONARY ...")
+                print("SAVING TRANSITION MATRIX NONZERO ROW COLUMN INDICES DICTIONARY ... ")
                 json.dump(self.transition_matrix_nonzero_entry_row_column_indices_dict, f)
-                print("DONE !!!")
-        except:
-            print("NO INDICES TO UPDATE !!!")
-        return self.transition_matrix_nonzero_entry_row_column_indices_dict
-
-
-    def load_transition_matrix_COO_format(self):
-        directory = '{}D'.format(self.n)
-        try:
-            os.makedirs(directory)
         except:
             pass
 
-        file_path = "{}/Transition_Matrix.npz".format(directory)
+
+
+    def load_transition_matrix_COO_format(self):
+        file_path = "{}/Transition_Matrix.npz".format(self.directory)
         transition_matrix = None
         if os.path.exists(file_path):
-            print("LOADING SPARSE TRANSITION MATRIX ...")
+            print("LOADING TRANSITION MATRIX IN SPARSE COO FORMAT ... ")
             transition_matrix = sc.sparse.load_npz(file_path)
-            print("DONE !!!")
         return transition_matrix
 
     def update_transition_matrix_COO_format(self):
-        directory = '{}D'.format(self.n)
-        file_path = "{}/Transition_Matrix.npz".format(directory)
-        ij_tuples=[(row_index,col_index) for row_index in self.transition_matrix_nonzero_entry_row_column_indices_dict.keys()
+        file_path = "{}/Transition_Matrix.npz".format(self.directory)
+        ij_tuples = [(row_index, col_index) for row_index in
+                     self.transition_matrix_nonzero_entry_row_column_indices_dict.keys()
                      for col_index in self.transition_matrix_nonzero_entry_row_column_indices_dict[row_index]]
 
         rows = np.array([t[0] for t in ij_tuples])
         cols = np.array([t[-1] for t in ij_tuples])
-        data = np.repeat(1 / 6, len(rows))
+        data = np.repeat(1 / len(self.rotation_permutations), len(rows))
         N = len(self.transition_matrix_nonzero_entry_row_column_indices_dict)
-        transition_matrix = sc.sparse.coo_matrix((data, (rows, cols)), shape=(N, N))
-        print("SAVING SPARSE TRANSITION MATRIX IN COO FORMAT ...")
-        sc.sparse.save_npz(file_path, transition_matrix)
-        print("DONE !!!")
-        return transition_matrix
-
-
-
-
-
-
-
+        self.transition_matrix = sc.sparse.coo_matrix((data, (rows, cols)), shape=(N, N))
+        print("SAVING TRANSITION MATRIX IN SPARSE COO FORMAT ... ")
+        sc.sparse.save_npz(file_path, self.transition_matrix)
 
 

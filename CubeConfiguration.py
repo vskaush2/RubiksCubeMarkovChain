@@ -1,4 +1,5 @@
 import numpy as np
+
 face_names=['Front','Left','Up','Back','Right','Down']
 basic_moves=['F','L','U','B','R','D']
 move_dict=dict(zip(basic_moves, face_names))
@@ -31,7 +32,6 @@ def configurations_are_equal(configuration1_dict,configuration2_dict):
 class CubeConfiguration:
 
     def __init__(self, n, configuration_dict=None):
-
         self.n=n
         if configuration_dict == None:
             configuration_dict=self.get_solved_cube_configuration_dict()
