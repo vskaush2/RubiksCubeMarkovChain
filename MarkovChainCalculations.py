@@ -2,23 +2,20 @@ import pandas as pd
 from joblib import Parallel, delayed
 from MarkovGraph import *
 
-
-
 class MarkovChainCalculations:
 
     def __init__(self, n):
         self.n=n
         self.MG = MarkovGraph(self.n, True)
         self.transition_matrix = self.MG.transition_matrix
-        self.directory = "{}/{}".format(MG.dir
-
-    def compute_chain_distribution(self, t):
-        directory = '{}D/Chain_Distributions'.format(self.n)
+        self.directory = "{}/{}".format(self.MG.directory, 'Chain Distributions')
         try:
-            os.makedirs(directory)
+            os.makedirs(self.directory)
         except:
             pass
-        file_path = "{}/{}_Scrambles.npz".format(directory, t)
+
+    def compute_chain_distribution(self, t):
+        file_path = "{}/{}_Scrambles.npz".format(self.directory, t)
         pi_t = None
 
         if os.path.exists(file_path):
@@ -43,12 +40,15 @@ class MarkovChainCalculations:
 
     def compute_current_total_variation_distances_df(self):
         N = self.transition_matrix.shape[0]
-        t=len(os.listdir('{}D/Chain_Distributions'.format(self.n)))
-        pis = Parallel(n_jobs=t, verbose=0, prefer='threads')(delayed(self.compute_chain_distribution)(j) for j in range(t))
-        current_total_variation_distances_df=pd.DataFrame(index=range(t))
+        max_scrambles =len(os.listdir(self.directory))
+        pis = Parallel(n_jobs=max_scrambles,
+                       verbose=0,
+                       prefer='threads')(delayed(self.compute_chain_distribution)(t) for t in range(max_scrambles))
+
+        current_total_variation_distances_df=pd.DataFrame(index=range(max_scrambles))
         current_total_variation_distances_df['Total Variation Distance to Discrete Uniform Distribution'] \
             = [0.5 * np.linalg.norm(pi.data - 1 / N, 1) + 0.5 * (N - len(pi.data)) / N for pi in pis]
-        current_total_variation_distances_df.index.rename("Chain Distribution",inplace=True)
+        current_total_variation_distances_df.index.rename("Chain Distribution Index",inplace=True)
         return current_total_variation_distances_df
 
 

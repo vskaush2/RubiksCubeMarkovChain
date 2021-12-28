@@ -138,8 +138,7 @@ class MarkovGraph:
 
     def get_transition_matrix_COO_format(self):
         file_path = "{}/Transition_Matrix.npz".format(self.directory)
-        N = len(self.transition_matrix_nonzero_entry_row_column_indices_dict)
-        transition_matrix = sc.sparse.identity(N)
+        transition_matrix = sc.sparse.identity(1)
         if os.path.exists(file_path):
             print("LOADING TRANSITION MATRIX IN SPARSE COO FORMAT ... ")
             transition_matrix = sc.sparse.load_npz(file_path)
