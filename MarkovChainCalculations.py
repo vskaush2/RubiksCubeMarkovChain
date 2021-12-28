@@ -8,8 +8,9 @@ class MarkovChainCalculations:
 
     def __init__(self, n):
         self.n=n
-        self.transition_matrix = MarkovGraph(self.n, True).transition_matrix
-
+        self.MG = MarkovGraph(self.n, True)
+        self.transition_matrix = self.MG.transition_matrix
+        self.directory = "{}/{}".format(MG.dir
 
     def compute_chain_distribution(self, t):
         directory = '{}D/Chain_Distributions'.format(self.n)
