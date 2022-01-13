@@ -14,9 +14,9 @@ def get_permutation(move_seq, n):
 def get_face_rotation_permutations(n):
     F, L, U, B, R, D = [get_permutation(basic_move,n) for basic_move in basic_moves] # The 6 clockwise permutations
     if n == 2:
-        return F, L, U, F*F, L*L, U*U, F*F*F, L*L*L, U*U*U # B,R,D are the same as F^3, L^3, U^3 in the 2D cube
+        return F, L, U, F*F*F, L*L*L, U*U*U # B,R,D are the same as F^3, L^3, U^3 in the 2D cube
     if n == 3:
-        return F, L, U, B, R, D, F*F, L*L, U*U, B*B, R*R, D*D, F*F*F, L*L*L, U*U*U, B*B*B, R*R*R, D*D*D
+        return F, L, U, B, R, D, F*F*F, L*L*L, U*U*U, B*B*B, R*R*R, D*D*D
 
 class MarkovGraph:
     def __init__(self, n, load_only_transition_matrix = True):
