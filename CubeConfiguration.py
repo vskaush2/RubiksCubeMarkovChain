@@ -29,6 +29,140 @@ def configurations_are_equal(configuration1_dict,configuration2_dict):
     return True
 
 
+def plot_configuration(configuration_dict,
+                       title='',
+                       colors_dict=None,
+                       linewidth=4.0,
+                       edgecolor='black',
+                       alpha=1,
+                       show_front_faces=True,
+                       show_left_faces=True,
+                       show_up_faces=True,
+                       show_back_faces=True,
+                       show_right_faces=True,
+                       show_down_faces=True,
+                       show_front_labels=False,
+                       show_left_labels=False,
+                       show_up_labels=False,
+                       show_back_labels=False,
+                       show_right_labels=False,
+                       show_down_labels=False):
+    fig = plt.figure(figsize=(5, 5))
+    ax = plt.axes(projection='3d')
+    n = len(configuration_dict['Front'])
+
+    if colors_dict == None:
+        colors = n ** 2 * ['white'] + n ** 2 * ['blue'] + n ** 2 * ['red'] + n ** 2 * ['green'] + n ** 2 * [
+            'orange'] + n ** 2 * ['yellow']
+        colors_dict = dict(zip(range(6 * n ** 2), colors))
+
+    front_squares = [np.array([[i, 0, n - j], [i + 1, 0, n - j], [i + 1, 0, n - j - 1], [i, 0, n - j - 1]]) for j in
+                     range(n) for i in range(n)]
+    if show_front_faces:
+        for i in range(len(front_squares)):
+            square = front_squares[i]
+            label = configuration_dict['Front'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_front_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='x')
+
+    back_squares = [
+        np.array([[n - i, n, n - j], [n - (i + 1), n, n - j], [n - (i + 1), n, n - j - 1], [n - i, n, n - j - 1]]) for j
+        in range(n) for i in range(n)]
+    if show_back_faces:
+        for i in range(len(back_squares)):
+            square = back_squares[i]
+            label = configuration_dict['Back'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_back_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='x')
+
+    left_squares = [
+        np.array([[0, n - i - 1, n - j], [0, n - i, n - j], [0, n - i, n - j - 1], [0, n - (i + 1), n - j - 1]]) for j
+        in range(n) for i in range(n)]
+    if show_left_faces:
+        for i in range(len(left_squares)):
+            square = left_squares[i]
+            label = configuration_dict['Left'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_left_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='y')
+
+    right_squares = [np.array([[n, i, n - j], [n, i + 1, n - j], [n, i + 1, n - j - 1], [n, i, n - j - 1]]) for j in
+                     range(n) for i in range(n)]
+    if show_right_faces:
+        for i in range(len(right_squares)):
+            square = right_squares[i]
+            label = configuration_dict['Right'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_right_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='y')
+
+    down_squares = [np.array([[i, j, 0], [i + 1, j, 0], [i + 1, j + 1, 0], [i, j + 1, 0]]) for j in range(n) for i in
+                    range(n)]
+    if show_down_faces:
+        for i in range(len(down_squares)):
+            square = down_squares[i]
+            label = configuration_dict['Down'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_down_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='x')
+
+    up_squares = [np.array([[i, n - j, n], [i + 1, n - j, n], [i + 1, n - (j + 1), n], [i, n - (j + 1), n]]) for j in
+                  range(n) for i in range(n)]
+    if show_up_faces:
+        for i in range(len(up_squares)):
+            square = up_squares[i]
+            label = configuration_dict['Up'].flatten()[i]
+            color = colors_dict[label]
+            center = np.mean(square, axis=0)  # Center of Square
+            ax.add_collection3d(Poly3DCollection([square],
+                                                 facecolor=color,
+                                                 linewidths=linewidth,
+                                                 edgecolors=edgecolor,
+                                                 alpha=alpha))
+            if show_up_labels:
+                ax.text3D(center[0], center[1], center[2], label, zdir='x')
+
+    ax.set_xlim(0, n)
+    ax.set_ylim(0, n)
+    ax.set_zlim(0, n)
+    ax.axis('off')
+    ax.set_title(title)
+    plt.close()
+    return fig
+
+
 class CubeConfiguration:
 
     def __init__(self, n, configuration_dict=None):
@@ -101,6 +235,9 @@ class CubeConfiguration:
             for move in move_seq:
                 new_configuration_dict = CubeConfiguration(self.n,new_configuration_dict).rotate_face(move_dict[move])
         return new_configuration_dict
+
+
+
 
 
 
